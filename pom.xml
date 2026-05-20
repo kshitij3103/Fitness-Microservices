@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.fitness</groupId>
+    <artifactId>fitness-microservices</artifactId>
+    <version>1.0.0</version>
+
+    <!-- CRITICAL: Packaging must be pom for the root project -->
+    <packaging>pom</packaging>
+
+    <!-- Defines the Spring Boot version for all child modules -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.0.5</version>
+        <relativePath/>
+    </parent>
+
+    <properties>
+        <java.version>24</java.version>
+        <spring-cloud.version>2025.1.1</spring-cloud.version> <!-- Matches Spring Boot 4.x -->
+    </properties>
+
+    <!-- Links your microservices to this parent -->
+    <modules>
+        <module>eureka</module>
+        <module>UserService</module>
+        <module>ActivityService</module>
+    </modules>
+
+    <!-- Manages Spring Cloud versions so you don't have to specify them in child POMs -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+</project>
