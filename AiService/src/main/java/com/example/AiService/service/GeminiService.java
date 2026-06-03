@@ -25,18 +25,28 @@ public class GeminiService {
     }
 
     public String getAnswer(String question){
+        if (geminiApiurl == null || geminiApiurl.isBlank()) {
+            throw new IllegalStateException("GEMINI_API_URL is not configured");
+        }
+        if (geminiApikey == null || geminiApikey.isBlank()) {
+            throw new IllegalStateException("GEMINI_API_KEY is not configured");
+        }
+
         Map<String,Object> requestBody = Map.of(
                 "contents", new Object[]{
                         Map.of("parts", new Object[]{
                                 Map.of("text", question)
                         })
-                }
+                },
+                "generationConfig", Map.of(
+                        "responseMimeType", "application/json"
+                )
         );
 
         try {
-            // CORRECTED: Using Spring's URI template to safely attach the key
             return webClient.post()
-                    .uri(geminiApiurl + "?key={key}", geminiApikey)
+                    .uri(geminiApiurl)
+                    .header("x-goog-api-key", geminiApikey)
                     .header("Content-Type", "application/json")
                     .bodyValue(requestBody)
                     .retrieve()

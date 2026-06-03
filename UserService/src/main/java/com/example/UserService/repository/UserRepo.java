@@ -14,4 +14,6 @@ public interface UserRepo extends JpaRepository<User,String> {
     boolean existsByKeycloackId(String userId);
 
     User findByEmail(@NotBlank(message = "email is required") @Email(message = "invalid email format") String email);
+
+    User findByKeycloackId(String keycloackId);
 }

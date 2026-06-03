@@ -1,5 +1,18 @@
 spring:
   application:
-    name: Ai-service
+    name: ai-service
   config :
     import : optional:configserver:http://localhost:8888
+
+gemini:
+  api:
+    url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent}
+    key: ${GEMINI_API_KEY:}
+
+rabbitmq:
+  exchange:
+    name: fitness.exchange
+  queue:
+    name: activity.queue
+  routing:
+    key: activity.tracking

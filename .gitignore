@@ -1,16 +1,8 @@
-# IntelliJ
-.idea/
-*.iml
-
-# Maven
 target/
-
-# Logs
+.maven-cache/
+.idea/
+.vscode/
 *.log
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Env files
 .env
+.service-pids/
+*.pid

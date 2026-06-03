@@ -16,6 +16,11 @@ public class UserResponse {
     private String password;
     private String firstName;
     private String lastName;
+    private Integer age;
+    private Double heightCm;
+    private Double weightKg;
+    private String fitnessGoal;
+    private String experienceLevel;
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
 

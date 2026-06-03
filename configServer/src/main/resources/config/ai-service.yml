@@ -1,6 +1,6 @@
 spring:
   application:
-    name: Ai-service
+    name: ai-service
 
   mongodb:
     uri: mongodb://localhost:27017/Fitness-Recommendations
@@ -22,5 +22,13 @@ eureka:
 
 gemini:
   api:
-    url: ${GEMINI_API_URL}
-    key: ${GEMINI_API_KEY}
+    url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent}
+    key: ${GEMINI_API_KEY:}
+
+rabbitmq:
+  exchange:
+    name: fitness.exchange
+  queue:
+    name: activity.queue
+  routing:
+    key: activity.tracking

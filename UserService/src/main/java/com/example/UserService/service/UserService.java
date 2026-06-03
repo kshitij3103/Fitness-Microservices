@@ -1,5 +1,6 @@
 package com.example.UserService.service;
 
+import com.example.UserService.dto.FitnessProfileRequest;
 import com.example.UserService.dto.RegisterRequest;
 import com.example.UserService.dto.UserResponse;
 import com.example.UserService.model.User;
@@ -13,6 +14,25 @@ import org.springframework.stereotype.Service;
 public class UserService {
     @Autowired
     private UserRepo userRepo;
+
+    private UserResponse mapToResponse(User user) {
+        UserResponse userResponse = new UserResponse();
+        userResponse.setId(user.getId());
+        userResponse.setKeycloackId(user.getKeycloackId());
+        userResponse.setEmail(user.getEmail());
+        userResponse.setFirstName(user.getFirstName());
+        userResponse.setLastName(user.getLastName());
+        userResponse.setPassword(user.getPassword());
+        userResponse.setAge(user.getAge());
+        userResponse.setHeightCm(user.getHeightCm());
+        userResponse.setWeightKg(user.getWeightKg());
+        userResponse.setFitnessGoal(user.getFitnessGoal());
+        userResponse.setExperienceLevel(user.getExperienceLevel());
+        userResponse.setCreatedDate(user.getCreatedDate());
+        userResponse.setUpdatedDate(user.getUpdatedDate());
+        return userResponse;
+    }
+
     public UserResponse register(@Valid RegisterRequest registerRequest) {
         if(userRepo.existsByEmail(registerRequest.getEmail())) {
             User existingUser = userRepo.findByEmail(registerRequest.getEmail());
@@ -20,16 +40,7 @@ public class UserService {
                 existingUser.setKeycloackId(registerRequest.getKeycloackId());
                 existingUser = userRepo.save(existingUser);
             }
-            UserResponse userResponse = new UserResponse();
-            userResponse.setId(existingUser.getId());
-            userResponse.setKeycloackId(existingUser.getKeycloackId());
-            userResponse.setEmail(existingUser.getEmail());
-            userResponse.setFirstName(existingUser.getFirstName());
-            userResponse.setLastName(existingUser.getLastName());
-            userResponse.setPassword(existingUser.getPassword());
-            userResponse.setCreatedDate(existingUser.getCreatedDate());
-            userResponse.setUpdatedDate(existingUser.getUpdatedDate());
-            return userResponse;
+            return mapToResponse(existingUser);
         }
         User user = new User();
         user.setEmail(registerRequest.getEmail());
@@ -38,35 +49,40 @@ public class UserService {
         user.setLastName(registerRequest.getLastName());
         user.setKeycloackId(registerRequest.getKeycloackId());
         User savedUser = userRepo.save(user);
-        UserResponse userResponse = new UserResponse();
-        userResponse.setKeycloackId(savedUser.getKeycloackId());
-        userResponse.setId(savedUser.getId());
-        userResponse.setEmail(savedUser.getEmail());
-        userResponse.setFirstName(savedUser.getFirstName());
-        userResponse.setLastName(savedUser.getLastName());
-        userResponse.setPassword(savedUser.getPassword());
-        userResponse.setCreatedDate(savedUser.getCreatedDate());
-        userResponse.setUpdatedDate(savedUser.getUpdatedDate());
-        return userResponse;
+        return mapToResponse(savedUser);
 
     }
 
     public UserResponse getUserProfile(String userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(()-> new RuntimeException("user not found"));
-        UserResponse userResponse = new UserResponse();
-        userResponse.setId(user.getId());
-        userResponse.setEmail(user.getEmail());
-        userResponse.setFirstName(user.getFirstName());
-        userResponse.setLastName(user.getLastName());
-        userResponse.setPassword(user.getPassword());
-        userResponse.setCreatedDate(user.getCreatedDate());
-        userResponse.setUpdatedDate(user.getUpdatedDate());
-        return userResponse;
+        return mapToResponse(user);
 
     }
 
     public boolean existsByUserId(String userId) {
          return userRepo.existsByKeycloackId(userId);
+    }
+
+    public UserResponse getUserProfileByKeycloackId(String keycloackId) {
+        User user = userRepo.findByKeycloackId(keycloackId);
+        if (user == null) {
+            throw new RuntimeException("user not found");
+        }
+        return mapToResponse(user);
+    }
+
+    public UserResponse updateFitnessProfile(String keycloackId, FitnessProfileRequest fitnessProfileRequest) {
+        User user = userRepo.findByKeycloackId(keycloackId);
+        if (user == null) {
+            throw new RuntimeException("user not found");
+        }
+
+        user.setAge(fitnessProfileRequest.getAge());
+        user.setHeightCm(fitnessProfileRequest.getHeightCm());
+        user.setWeightKg(fitnessProfileRequest.getWeightKg());
+        user.setFitnessGoal(fitnessProfileRequest.getFitnessGoal());
+        user.setExperienceLevel(fitnessProfileRequest.getExperienceLevel());
+        return mapToResponse(userRepo.save(user));
     }
 }

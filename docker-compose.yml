@@ -1,0 +1,167 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: fitness_user_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - fitness-network
+    restart: on-failure
+
+  mongodb:
+    image: mongo:6
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - fitness-network
+    restart: on-failure
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - fitness-network
+    restart: on-failure
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    hostname: keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8181:8080"
+    volumes:
+      - ./realm-export.json:/opt/keycloak/data/import/realm-export.json
+    command: start-dev --import-realm
+    networks:
+      - fitness-network
+    restart: on-failure
+
+  eureka:
+    build:
+      context: ./eureka
+      dockerfile: Dockerfile
+    ports:
+      - "8761:8761"
+    networks:
+      - fitness-network
+    restart: on-failure
+
+  config-server:
+    build:
+      context: ./configServer
+      dockerfile: Dockerfile
+    ports:
+      - "8888:8888"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+    depends_on:
+      - eureka
+    networks:
+      - fitness-network
+    restart: on-failure
+
+  api-gateway:
+    build:
+      context: ./apiGateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://keycloak:8080/realms/fitness-oauth2/protocol/openid-connect/certs
+    depends_on:
+      - eureka
+      - config-server
+      - keycloak
+    networks:
+      - fitness-network
+    restart: on-failure
+
+  user-service:
+    build:
+      context: .
+      dockerfile: UserService/Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/fitness_user_db
+    depends_on:
+      - eureka
+      - config-server
+      - postgres
+    networks:
+      - fitness-network
+    restart: on-failure
+
+  activity-service:
+    build:
+      context: .
+      dockerfile: ActivityService/Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+      - SPRING_MONGODB_URI=mongodb://mongodb:27017/fitnessactivity
+      - SPRING_RABBITMQ_HOST=rabbitmq
+    depends_on:
+      - eureka
+      - config-server
+      - mongodb
+      - rabbitmq
+    networks:
+      - fitness-network
+    restart: on-failure
+
+  ai-service:
+    build:
+      context: ./AiService
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_CONFIG_IMPORT=configserver:http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+      - SPRING_MONGODB_URI=mongodb://mongodb:27017/Fitness-Recommendations
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      - eureka
+      - config-server
+      - mongodb
+      - rabbitmq
+    networks:
+      - fitness-network
+    restart: on-failure
+
+  frontend:
+    build:
+      context: ./fitness-app-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - fitness-network
+    restart: on-failure
+
+networks:
+  fitness-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  mongodb-data:

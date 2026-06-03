@@ -25,6 +25,12 @@ public class User {
     private String firstName;
     private String lastName;
 
+    private Integer age;
+    private Double heightCm;
+    private Double weightKg;
+    private String fitnessGoal;
+    private String experienceLevel;
+
     @Enumerated(EnumType.STRING)
     private UserRole role =UserRole.USER;
 

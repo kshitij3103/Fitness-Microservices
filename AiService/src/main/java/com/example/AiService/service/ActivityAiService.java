@@ -2,6 +2,7 @@ package com.example.AiService.service;
 
 import com.example.AiService.model.Activity;
 import com.example.AiService.model.Recommendation;
+import com.example.AiService.model.UserProfile;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -19,11 +20,19 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ActivityAiService {
     private final GeminiService geminiService;
+    private final UserProfileService userProfileService;
     public Recommendation generateRecommendation(Activity  activity ){
-        String prompt= createPromptForActivity(activity);
-        String aiResponse = geminiService.getAnswer(prompt);
+        try {
+            UserProfile userProfile = userProfileService.getUserProfile(activity.getUserId());
+            String prompt= createPromptForActivity(activity, userProfile);
+            String aiResponse = geminiService.getAnswer(prompt);
 
-        return processAiresponse(activity,aiResponse);
+            return processAiresponse(activity,aiResponse);
+        }
+        catch (Exception e){
+            log.error("Unable to generate AI recommendation for activity {}", activity.getId(), e);
+            return createDefaultRecommedantion(activity);
+        }
 
     }
     private Recommendation processAiresponse(Activity  activity, String aiResponse ){
@@ -136,7 +145,27 @@ public class ActivityAiService {
     }
 
 
-    private String createPromptForActivity(Activity activity) {
+    private String createProfileSummary(UserProfile userProfile) {
+        if (userProfile == null) {
+            return "No user fitness profile available.";
+        }
+
+        return String.format("""
+        Age: %s
+        Height: %s cm
+        Weight: %s kg
+        Fitness Goal: %s
+        Experience Level: %s
+        """,
+                userProfile.getAge() == null ? "Not provided" : userProfile.getAge(),
+                userProfile.getHeightCm() == null ? "Not provided" : userProfile.getHeightCm(),
+                userProfile.getWeightKg() == null ? "Not provided" : userProfile.getWeightKg(),
+                userProfile.getFitnessGoal() == null ? "Not provided" : userProfile.getFitnessGoal(),
+                userProfile.getExperienceLevel() == null ? "Not provided" : userProfile.getExperienceLevel()
+        );
+    }
+
+    private String createPromptForActivity(Activity activity, UserProfile userProfile) {
         return String.format("""
         Analyze this fitness activity and provide detailed recommendations in the following EXACT JSON format:
         {
@@ -164,6 +193,9 @@ public class ActivityAiService {
           ]
         }
 
+        User fitness profile:
+        %s
+
         Analyze this activity:
         Activity Type: %s
         Duration: %d minutes
@@ -171,8 +203,10 @@ public class ActivityAiService {
         Additional Metrics: %s
         
         Provide detailed analysis focusing on performance, improvements, next workout suggestions, and safety guidelines.
+        Personalize the advice using the user's age, height, weight, fitness goal, and experience level when available.
         Ensure the response follows the EXACT JSON format shown above.
         """,
+                createProfileSummary(userProfile),
                 activity.getType(),
                 activity.getDuration(),
                 activity.getCaloriesBurned(),
