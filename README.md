@@ -47,7 +47,7 @@ This ecosystem is composed of 7 core backend services and a React frontend, orch
 ![AI Recommendations 3](screenshots/reccomendations3.png)
 *Actionable insights generated from user activity.*
 
-[Insert link to screen recording or video demonstration here]
+
 
 ---
 
